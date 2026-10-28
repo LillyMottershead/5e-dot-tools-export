@@ -1,0 +1,21 @@
+# {{ name }}
+
+*{{ subtitle }}*
+
+- Casting Time: {{ casting_time }}
+- Range: {{ range }}
+- Components: {{ components }}
+- Duration: {{ duration }}
+{% if classes %}
+- Classes: {{ classes | join(', ') }}
+{% endif %}
+
+{{ description_md }}
+
+{% if higher_levels_md %}
+{{ higher_levels_md }}
+{% endif %}
+
+---
+
+{{ source_page }}{% if data_version %} (5etools {{ data_version }}){% endif %}

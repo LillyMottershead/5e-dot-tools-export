@@ -1,0 +1,8 @@
+**{{ name }}** ({{ subtitle }}){{ " [ritual]" if ritual else "" }}
+{{ casting_time }} | {{ range }} | {{ components }} | {{ duration }}
+
+{{ description_md }}
+{% if higher_levels_inline %}
+
+{{ higher_levels_inline }}
+{% endif %}

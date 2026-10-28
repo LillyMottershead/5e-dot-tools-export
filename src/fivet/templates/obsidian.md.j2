@@ -1,0 +1,27 @@
+---
+title: {{ name | yaml }}
+level: {{ level }}
+school: {{ school | yaml }}
+casting_time: {{ casting_time | yaml }}
+range: {{ range | yaml }}
+components: {{ components | yaml }}
+duration: {{ duration | yaml }}
+concentration: {{ concentration | yaml }}
+ritual: {{ ritual | yaml }}
+classes: {{ classes | yaml_list }}
+source: {{ source_page | yaml }}
+{% if data_version %}
+data_version: {{ data_version | yaml }}
+{% endif %}
+tags: {{ tags | yaml_list }}
+---
+
+# {{ name }}
+
+{{ subtitle }}
+
+{{ description_md }}
+
+{% if higher_levels_md %}
+{{ higher_levels_md }}
+{% endif %}

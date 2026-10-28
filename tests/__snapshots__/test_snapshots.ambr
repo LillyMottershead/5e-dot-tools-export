@@ -1,0 +1,521 @@
+# serializer version: 1
+# name: test_link_styles_snapshot[plain]
+  '''
+  ---
+  title: Scaling Burst
+  level: 3
+  school: Evocation
+  casting_time: 1 action
+  range: 30 feet
+  components: V, S
+  duration: Instantaneous
+  concentration: false
+  ritual: false
+  classes: [Wizard]
+  source: XPHB p.1
+  data_version: vTEST
+  tags: [spell/level/3, spell/school/evocation]
+  ---
+  
+  # Scaling Burst
+  
+  3rd-level evocation
+  
+  Each creature in a 20-foot-radius Sphere makes a Dexterity saving throw, taking 8d6 Fire damage on a failure.
+  
+  Flammable objects start burning.
+  
+  ## Using a Higher-Level Spell Slot
+  
+  The damage increases by 1d6 per slot level.
+  
+  '''
+# ---
+# name: test_link_styles_snapshot[url]
+  '''
+  ---
+  title: Scaling Burst
+  level: 3
+  school: Evocation
+  casting_time: 1 action
+  range: 30 feet
+  components: V, S
+  duration: Instantaneous
+  concentration: false
+  ritual: false
+  classes: [Wizard]
+  source: XPHB p.1
+  data_version: vTEST
+  tags: [spell/level/3, spell/school/evocation]
+  ---
+  
+  # Scaling Burst
+  
+  3rd-level evocation
+  
+  Each creature in a 20-foot-radius [Sphere](https://5e.tools/variantrules.html#sphere_xphb) makes a Dexterity saving throw, taking 8d6 Fire damage on a failure.
+  
+  Flammable objects start [burning](https://5e.tools/trapshazards.html#burning_xphb).
+  
+  ## Using a Higher-Level Spell Slot
+  
+  The damage increases by 1d6 per slot level.
+  
+  '''
+# ---
+# name: test_link_styles_snapshot[wikilink]
+  '''
+  ---
+  title: Scaling Burst
+  level: 3
+  school: Evocation
+  casting_time: 1 action
+  range: 30 feet
+  components: V, S
+  duration: Instantaneous
+  concentration: false
+  ritual: false
+  classes: [Wizard]
+  source: XPHB p.1
+  data_version: vTEST
+  tags: [spell/level/3, spell/school/evocation]
+  ---
+  
+  # Scaling Burst
+  
+  3rd-level evocation
+  
+  Each creature in a 20-foot-radius [[Sphere]] makes a Dexterity saving throw, taking 8d6 Fire damage on a failure.
+  
+  Flammable objects start [[burning]].
+  
+  ## Using a Higher-Level Spell Slot
+  
+  The damage increases by 1d6 per slot level.
+  
+  '''
+# ---
+# name: test_obsidian_snapshot[cantrip]
+  '''
+  ---
+  title: Minor Splash
+  level: 0
+  school: Conjuration
+  casting_time: 1 action
+  range: 30 feet
+  components: V, S
+  duration: Instantaneous
+  concentration: false
+  ritual: false
+  classes: [Wizard]
+  source: XPHB p.1
+  data_version: vTEST
+  tags: [spell/level/0, spell/school/conjuration]
+  ---
+  
+  # Minor Splash
+  
+  Conjuration cantrip
+  
+  It does a thing.
+  
+  '''
+# ---
+# name: test_obsidian_snapshot[chance_tag]
+  '''
+  ---
+  title: Uncertain Omen
+  level: 1
+  school: Evocation
+  casting_time: 1 action
+  range: 30 feet
+  components: V, S
+  duration: Instantaneous
+  concentration: false
+  ritual: false
+  classes: [Wizard]
+  source: XPHB p.1
+  data_version: vTEST
+  tags: [spell/level/1, spell/school/evocation]
+  ---
+  
+  # Uncertain Omen
+  
+  1st-level evocation
+  
+  There is a 25 percent of a false result.
+  
+  '''
+# ---
+# name: test_obsidian_snapshot[emanation_range]
+  '''
+  ---
+  title: Emanating Aura
+  level: 1
+  school: Evocation
+  casting_time: 1 action
+  range: Self (20-foot emanation)
+  components: V, S
+  duration: Concentration, up to 10 minutes
+  concentration: true
+  ritual: false
+  classes: [Wizard]
+  source: XPHB p.1
+  data_version: vTEST
+  tags: [spell/level/1, spell/school/evocation, spell/concentration]
+  ---
+  
+  # Emanating Aura
+  
+  1st-level evocation
+  
+  It does a thing.
+  
+  '''
+# ---
+# name: test_obsidian_snapshot[filter_tag]
+  '''
+  ---
+  title: Beast Caller
+  level: 1
+  school: Evocation
+  casting_time: 1 action
+  range: 30 feet
+  components: V, S
+  duration: Instantaneous
+  concentration: false
+  ritual: false
+  classes: [Wizard]
+  source: XPHB p.1
+  data_version: vTEST
+  tags: [spell/level/1, spell/school/evocation]
+  ---
+  
+  # Beast Caller
+  
+  1st-level evocation
+  
+  You summon any beast.
+  
+  '''
+# ---
+# name: test_obsidian_snapshot[inset_block]
+  '''
+  ---
+  title: Inset Spell
+  level: 1
+  school: Evocation
+  casting_time: 1 action
+  range: 30 feet
+  components: V, S
+  duration: Instantaneous
+  concentration: false
+  ritual: false
+  classes: [Wizard]
+  source: XPHB p.1
+  data_version: vTEST
+  tags: [spell/level/1, spell/school/evocation]
+  ---
+  
+  # Inset Spell
+  
+  1st-level evocation
+  
+  You call a mount.
+  
+  > **A Caution**
+  >
+  > Treat it kindly.
+  
+  '''
+# ---
+# name: test_obsidian_snapshot[material_without_text]
+  '''
+  ---
+  title: Vague Material
+  level: 1
+  school: Evocation
+  casting_time: 1 action
+  range: 30 feet
+  components: V, S, M
+  duration: Instantaneous
+  concentration: false
+  ritual: false
+  classes: [Wizard]
+  source: XPHB p.1
+  data_version: vTEST
+  tags: [spell/level/1, spell/school/evocation]
+  ---
+  
+  # Vague Material
+  
+  1st-level evocation
+  
+  It does a thing.
+  
+  '''
+# ---
+# name: test_obsidian_snapshot[multiple_durations]
+  '''
+  ---
+  title: Varied Duration
+  level: 1
+  school: Evocation
+  casting_time: 1 action
+  range: 30 feet
+  components: V, S
+  duration: Instantaneous or 1 hour (see below)
+  concentration: false
+  ritual: false
+  classes: [Wizard]
+  source: XPHB p.1
+  data_version: vTEST
+  tags: [spell/level/1, spell/school/evocation]
+  ---
+  
+  # Varied Duration
+  
+  1st-level evocation
+  
+  It does a thing.
+  
+  '''
+# ---
+# name: test_obsidian_snapshot[permanent_until_dispelled]
+  '''
+  ---
+  title: Lasting Seal
+  level: 1
+  school: Evocation
+  casting_time: 1 action
+  range: 30 feet
+  components: V, S
+  duration: Until dispelled
+  concentration: false
+  ritual: false
+  classes: [Wizard]
+  source: XPHB p.1
+  data_version: vTEST
+  tags: [spell/level/1, spell/school/evocation]
+  ---
+  
+  # Lasting Seal
+  
+  1st-level evocation
+  
+  It does a thing.
+  
+  '''
+# ---
+# name: test_obsidian_snapshot[reaction_with_condition]
+  '''
+  ---
+  title: Reactive Guard
+  level: 1
+  school: Evocation
+  casting_time: 1 reaction, which you take when struck
+  range: 30 feet
+  components: V, S
+  duration: Instantaneous
+  concentration: false
+  ritual: false
+  classes: [Wizard]
+  source: XPHB p.1
+  data_version: vTEST
+  tags: [spell/level/1, spell/school/evocation]
+  ---
+  
+  # Reactive Guard
+  
+  1st-level evocation
+  
+  You ward yourself.
+  
+  '''
+# ---
+# name: test_obsidian_snapshot[ritual_with_list]
+  '''
+  ---
+  title: Listed Ritual
+  level: 1
+  school: Evocation
+  casting_time: 1 action
+  range: 30 feet
+  components: V, S
+  duration: Instantaneous
+  concentration: false
+  ritual: true
+  classes: [Wizard]
+  source: XPHB p.1
+  data_version: vTEST
+  tags: [spell/level/1, spell/school/evocation, spell/ritual]
+  ---
+  
+  # Listed Ritual
+  
+  1st-level evocation
+  
+  You choose one of the following:
+  
+  - **Audible.** You hear a chime.
+  - **Mental.** You feel a ping.
+  
+  '''
+# ---
+# name: test_obsidian_snapshot[royalty_component]
+  '''
+  ---
+  title: Costly Word
+  level: 2
+  school: Evocation
+  casting_time: 1 action
+  range: 30 feet
+  components: V, R (2 gp)
+  duration: Instantaneous
+  concentration: false
+  ritual: false
+  classes: [Wizard]
+  source: XPHB p.1
+  data_version: vTEST
+  tags: [spell/level/2, spell/school/evocation]
+  ---
+  
+  # Costly Word
+  
+  2nd-level evocation
+  
+  It does a thing.
+  
+  '''
+# ---
+# name: test_obsidian_snapshot[scaling_and_references]
+  '''
+  ---
+  title: Scaling Burst
+  level: 3
+  school: Evocation
+  casting_time: 1 action
+  range: 30 feet
+  components: V, S
+  duration: Instantaneous
+  concentration: false
+  ritual: false
+  classes: [Wizard]
+  source: XPHB p.1
+  data_version: vTEST
+  tags: [spell/level/3, spell/school/evocation]
+  ---
+  
+  # Scaling Burst
+  
+  3rd-level evocation
+  
+  Each creature in a 20-foot-radius [[Sphere]] makes a Dexterity saving throw, taking 8d6 Fire damage on a failure.
+  
+  Flammable objects start [[burning]].
+  
+  ## Using a Higher-Level Spell Slot
+  
+  The damage increases by 1d6 per slot level.
+  
+  '''
+# ---
+# name: test_obsidian_snapshot[table_with_rollable_cells]
+  '''
+  ---
+  title: Table Spell
+  level: 1
+  school: Evocation
+  casting_time: 1 action
+  range: 30 feet
+  components: V, S
+  duration: Instantaneous
+  concentration: false
+  ritual: false
+  classes: [Wizard]
+  source: XPHB p.1
+  data_version: vTEST
+  tags: [spell/level/1, spell/school/evocation]
+  ---
+  
+  # Table Spell
+  
+  1st-level evocation
+  
+  Roll for the effect.
+  
+  **Table Spell**
+  
+  | d4 | Effect |
+  | --- | --- |
+  | 1 | First |
+  | 2-3 | Second |
+  | 4 | [[test beast\|Beast]] |
+  
+  '''
+# ---
+# name: test_obsidian_snapshot[up_to_duration]
+  '''
+  ---
+  title: Timed Step
+  level: 1
+  school: Evocation
+  casting_time: 1 action
+  range: 30 feet
+  components: V, S
+  duration: Up to 8 hours
+  concentration: false
+  ritual: false
+  classes: [Wizard]
+  source: XPHB p.1
+  data_version: vTEST
+  tags: [spell/level/1, spell/school/evocation]
+  ---
+  
+  # Timed Step
+  
+  1st-level evocation
+  
+  It does a thing.
+  
+  '''
+# ---
+# name: test_other_templates_snapshot[compact]
+  '''
+  **Scaling Burst** (3rd-level evocation)
+  1 action | 30 feet | V, S | Instantaneous
+  
+  Each creature in a 20-foot-radius [[Sphere]] makes a Dexterity saving throw, taking 8d6 Fire damage on a failure.
+  
+  Flammable objects start [[burning]].
+  
+  **Using a Higher-Level Spell Slot.** The damage increases by 1d6 per slot level.
+  
+  '''
+# ---
+# name: test_other_templates_snapshot[plain]
+  '''
+  # Scaling Burst
+  
+  *3rd-level evocation*
+  
+  - Casting Time: 1 action
+  - Range: 30 feet
+  - Components: V, S
+  - Duration: Instantaneous
+  - Classes: Wizard
+  
+  Each creature in a 20-foot-radius [[Sphere]] makes a Dexterity saving throw, taking 8d6 Fire damage on a failure.
+  
+  Flammable objects start [[burning]].
+  
+  ## Using a Higher-Level Spell Slot
+  
+  The damage increases by 1d6 per slot level.
+  
+  ---
+  
+  XPHB p.1 (5etools vTEST)
+  
+  '''
+# ---
