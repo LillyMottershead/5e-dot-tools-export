@@ -71,6 +71,8 @@ Confirmed by reading `Fireball` from `spells-xphb.json`:
 
 ### 3.2 Field normalization rules
 
+Upstream's formatters take a `styleHint` of `classic` (2014 phrasing: `1 action`, `3rd-level evocation`) or `one` (2024 phrasing: `Action`, `Level 3 Evocation`). v1 always formats in `classic` style, including for 2024-source spells, so that exported markdown reads consistently across editions. If that turns out to be the wrong call it becomes a config key alongside `links`.
+
 Every variant below is the complete observed set across 935 spells from the seven largest sources (PHB, XPHB, XGE, TCE, EGW, AU, FRHoF). These are closed sets in practice, so normalization is table-driven, not heuristic.
 
 School is a single letter. All eight occur: `A` Abjuration, `C` Conjuration, `D` Divination, `E` Enchantment, `I` Illusion, `N` Necromancy, `T` Transmutation, `V` Evocation. A `P` (psionic) code exists upstream but appears in no spell file.
