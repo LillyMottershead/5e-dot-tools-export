@@ -82,3 +82,48 @@ def write_config(isolated_dirs):
         return path
 
     return _write
+
+
+@pytest.fixture
+def spell_set(raw_spell, raw_cantrip) -> list:
+    """A small corpus covering source collision, levels, schools and classes."""
+    from fivet.models import Spell
+
+    def make(name, source, level, school, classes=()):
+        spell = Spell.model_validate(
+            {
+                "name": name,
+                "source": source,
+                "level": level,
+                "school": school,
+                "time": [{"number": 1, "unit": "action"}],
+                "range": {"type": "point", "distance": {"type": "feet", "amount": 30}},
+                "components": {"v": True},
+                "duration": [{"type": "instant"}],
+                "entries": [f"{name} does something."],
+            }
+        )
+        spell.classes = list(classes)
+        return spell
+
+    spells = [
+        Spell.model_validate(raw_spell),
+        Spell.model_validate(raw_cantrip),
+        # Same name in two books, which is the ambiguity case that matters.
+        make("Test Blast", "PHB", 3, "V", ["Sorcerer", "Wizard"]),
+        make("Testing Winds", "XPHB", 2, "T", ["Druid"]),
+        make("Quiet Ward", "XGE", 1, "A", ["Cleric"]),
+        make("Loud Ward", "TCE", 5, "A", ["Wizard"]),
+    ]
+    spells[0].classes = ["Sorcerer", "Wizard"]
+    return spells
+
+
+@pytest.fixture
+def store(tmp_path, spell_set):
+    """A built, read-only store over the fixture corpus."""
+    from fivet.store import Store
+
+    built = Store.build(tmp_path / "index.db", spell_set, meta={"version": "v0.0.1"})
+    with Store(built.path) as opened:
+        yield opened
