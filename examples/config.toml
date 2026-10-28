@@ -1,0 +1,22 @@
+# Example 5et configuration.
+# Copy to <config dir>/config.toml, which is ~/.config/5et/config.toml on Linux.
+# Every key is optional; the values shown are the defaults.
+
+# How cross-references such as conditions and other spells render in markdown.
+#   wikilink -> [[Frightened]]
+#   plain    -> Frightened
+#   url      -> [Frightened](https://5e.tools/conditionsdiseases.html#frightened_xphb)
+links = "wikilink"
+
+# Default markdown template: obsidian, plain, compact, or your own.
+template = "obsidian"
+
+# Which book wins when a spell name exists in several. Unlisted sources sort
+# after every listed one. Put "PHB" first to prefer the 2014 rules.
+source_priority = ["XPHB", "PHB", "XGE", "TCE"]
+
+# Minimum similarity, 0 to 100, for a fuzzy name match to be accepted.
+fuzzy_cutoff = 80
+
+# Default directory for `5et spell <name> -o`.
+# output_dir = "~/vault/Spells"

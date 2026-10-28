@@ -1,6 +1,6 @@
 # 5et: a CLI for 5etools spell data
 
-Status: design, not yet implemented
+Status: implemented
 Last updated: 2026-10-28
 Data surveyed against 5etools-src `v2.39.0` (released 2026-10-24)
 
@@ -238,7 +238,7 @@ output_dir = "~/vault/Spells"
 
 ```
 5et sync [--version TAG] [--force]
-5et spell NAME [--source SRC] [--format {rich,md}] [--template NAME]
+5et spell NAME [--source SRC] [--format {auto,rich,md}] [--template NAME]
               [--links {wikilink,plain,url}] [--output DIR] [--force]
 5et search QUERY [--level N] [--school NAME] [--class NAME] [--source SRC]
 5et sources
@@ -247,7 +247,8 @@ output_dir = "~/vault/Spells"
 
 Behaviors:
 
-- stdout is rich only when it is a TTY, so `5et spell fireball > f.md` yields clean markdown with no flag
+- `--format` defaults to `auto`: rich only when stdout is a TTY, so `5et spell fireball > f.md` yields clean markdown with no flag. `--output` also implies markdown
+- advisory notes (a fuzzy match, a source ambiguity) go to stderr, so redirected markdown stays clean
 - `--output DIR` writes `Fireball.md` and refuses to overwrite without `--force`
 - `--version` on sync pins; without it, sync pins whatever is newest at that moment and never drifts afterward
 - command is `5et`, with `fivetools` as a second console script for anyone who dislikes a leading digit
@@ -343,6 +344,24 @@ A guard test asserts that an unknown `{@tag}` degrades to its first argument rat
 
 ## 12. Open questions
 
-- Whether `classVariant` from `sources.json` deserves presentation in a later version, and if so how to distinguish it from baseline class access
-- Whether fluff files are worth pulling for flavor text, which would roughly double fetch size for content most templates would not use
-- Whether `--links url` should resolve real 5e.tools hash URLs per entity type, which needs a page and hash mapping per tag, or settle for linking only the entity types with a stable URL form
+- Whether `classVariant` from `sources.json` deserves presentation in a later version, and if so how to distinguish it from baseline class access. v1 reads only `class` (834 of 969 spells); `classVariant` covers a further 180 and would need its own presentation to be meaningful.
+- Whether fluff files are worth pulling for flavor text, which would roughly double fetch size for content most templates would not use.
+- Whether formatting should follow the 2024 style hint for 2024-source spells instead of always using `classic` (section 3.2). This becomes a config key if the current choice reads wrong in practice.
+
+## 13. Divergences from the original design
+
+Recorded so the reasoning is not lost. Each was driven by reading upstream or by a failing test, not by preference.
+
+`@scaledamage` renders the step, not the base. The original plan emitted the base, which would have overstated scaling eightfold in the one sentence it appears in. Corrected in section 6.1 after reading upstream's `_TagDiceFlavorScaling`.
+
+Formatting fixed to the `classic` style hint. Upstream formats differently per edition; v1 picks one so exports read consistently. Noted in section 3.2 and listed above as still open.
+
+`url` link mode is conditional. A link is produced only when the tag maps to a 5e.tools page and carries an explicit source, because the hash is `name_source` and a guessed source yields a link that silently 404s.
+
+Only `name`, `source` and `level` are required on the model, rather than all ten universal fields. Requiring the other seven would turn an upstream schema tweak into a failed sync for no benefit.
+
+Frontmatter values are plain text while body prose carries the link style, and both are YAML-quoted on demand. A rendered wikilink begins with `[`, which YAML would read as a flow sequence; and writing that test surfaced a second case, where a comma is harmless in a block scalar but separates items inside a flow sequence, so class lists need stricter quoting than plain values.
+
+The template context carries `higher_levels_inline` alongside `higher_levels_md`, the same content with its heading folded into a bold lead-in, for templates such as `compact` where an h2 would be out of place.
+
+Snapshot tests use hand-written fixtures that mirror the structure of named real spells, rather than the real spells themselves, to respect the licensing constraint in section 2. Invariant checks against real data live in an opt-in test module that skips unless a cache exists.

@@ -43,7 +43,12 @@ def _err() -> Console:
 
 def _note(message: str) -> None:
     """Advisory output goes to stderr so it never pollutes piped markdown."""
-    _err().print(f"[dim]{message}[/dim]")
+    _err().print(f"[dim]{message}[/dim]", soft_wrap=True)
+
+
+def _note_path(label: str, path: Path) -> None:
+    """Paths go out unwrapped, so they stay copy-pasteable."""
+    click.echo(f"{label} {path}", err=True)
 
 
 def _open_store(ctx: click.Context) -> Store:
@@ -98,7 +103,7 @@ def sync_command(version: str | None, force: bool) -> None:
         f"from [bold]{result.source_count}[/bold] sources "
         f"at [bold]{result.version}[/bold]."
     )
-    _note(f"Cache: {cache}")
+    _note_path("Cache:", cache)
 
 
 @main.command("spell")
@@ -181,7 +186,7 @@ def spell_command(
     if path.exists() and not force:
         raise click.ClickException(f"{path} already exists. Use --force to overwrite.")
     path.write_text(text)
-    _out().print(f"Wrote {path}")
+    click.echo(f"Wrote {path}")
 
 
 def _render_markdown(
@@ -299,7 +304,7 @@ def cache_clear(yes: bool) -> None:
     if not yes:
         click.confirm(f"Delete {cache}?", abort=True)
     shutil.rmtree(cache)
-    _out().print(f"Removed {cache}")
+    click.echo(f"Removed {cache}")
 
 
 if __name__ == "__main__":
