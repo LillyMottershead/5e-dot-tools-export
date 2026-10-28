@@ -198,9 +198,9 @@ Inline formatting, 56 uses: `@b`, `@i`, `@note`. Direct markdown equivalents.
 
 Dice and numbers, 770 uses: `@damage`, `@dice`, `@dc`, `@hit`, `@d20`. Take the first pipe-delimited argument and emit it as text. `{@damage 8d6}` becomes `8d6`.
 
-Scaling, 156 uses: `@scaledamage`, `@scaledice`. Argument form is `base|levelRange|step`, as in `8d6|3-9|1d6`. The site renders the base value, so we emit `8d6`.
+Scaling, 156 uses: `@scaledamage`, `@scaledice`. Argument form is `base|levelRange|step`, as in `8d6|3-9|1d6`. Upstream renders the step, not the base, because the surrounding sentence is always about the per-level increase: "The damage increases by 1d6 for each spell slot level above 3". Emitting the base here would overstate the scaling eightfold.
 
-Cross-references, 1600+ uses and the group that must be correct: `@variantrule`, `@condition`, `@spell`, `@creature`, `@action`, `@skill`, `@status`, `@sense`, `@item`, `@hazard`, `@race`, `@classFeature`. Argument form is `name|source|displayText`. Display text wins when present. Otherwise use the name with any trailing bracketed qualifier stripped, because `{@variantrule Sphere [Area of Effect]|XPHB|Sphere}` must not render as `Sphere [Area of Effect]`. Output form depends on the link setting in section 7.
+Cross-references, 1600+ uses and the group that must be correct: `@variantrule`, `@condition`, `@spell`, `@creature`, `@action`, `@skill`, `@status`, `@sense`, `@item`, `@hazard`, `@race`, `@classFeature`. Argument form is `name|source|displayText`. Upstream's rule is `parts[2] if len(parts) >= 3 else parts[0]`, so display text wins when present. When it is absent we additionally strip any trailing bracketed qualifier from the name, so a bare `{@variantrule Sphere [Area of Effect]|XPHB}` could not render as `Sphere [Area of Effect]`. No such case exists in the current data, checked across all 935 spells, so this is a safety net rather than a fix. Output form depends on the link setting in section 7.
 
 Awkward but degradable, 96 uses: `@filter`, `@quickref`, `@book`, `@chance`. These carry site-specific navigation payloads, but in every observed case the first argument is already the human-readable text:
 
@@ -209,6 +209,8 @@ Awkward but degradable, 96 uses: `@filter`, `@quickref`, `@book`, `@chance`. The
 - `{@chance 25|||Random reading!|Regular reading}` to `25 percent chance`
 
 These render as plain text regardless of link setting, since there is no stable target to link to.
+
+In `url` mode a cross-reference becomes a link only when its tag maps to a 5e.tools page and the tag carries an explicit source, since the URL hash is `name_source` and a guessed source produces a link that silently 404s. Everything else degrades to plain text.
 
 Any tag not in the dispatch table falls back to emitting its first argument and logging at debug level. An unknown tag should degrade to readable prose, never to a traceback or a literal `{@...}` in someone's vault.
 
