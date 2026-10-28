@@ -270,22 +270,22 @@ Templates receive a flat, pre-rendered context so that writing one requires no k
 
 ```python
 {
-  "name": "Fireball",
-  "level": 3,
-  "level_text": "3rd-level",
-  "school": "Evocation",
-  "casting_time": "1 action",
-  "range": "150 feet",
-  "components": "V, S, M (a ball of bat guano and sulfur)",
-  "duration": "Instantaneous",
-  "concentration": False,
-  "ritual": False,
-  "classes": ["Sorcerer", "Wizard"],
-  "source": "XPHB",
-  "page": 274,
-  "description_md": "...",        # already converted
-  "higher_levels_md": "...",      # already converted, or None
-  "data_version": "v2.39.0",
+    "name": "Fireball",
+    "level": 3,
+    "level_text": "3rd-level",
+    "school": "Evocation",
+    "casting_time": "1 action",
+    "range": "150 feet",
+    "components": "V, S, M (a ball of bat guano and sulfur)",
+    "duration": "Instantaneous",
+    "concentration": False,
+    "ritual": False,
+    "classes": ["Sorcerer", "Wizard"],
+    "source": "XPHB",
+    "page": 274,
+    "description_md": "...",  # already converted
+    "higher_levels_md": "...",  # already converted, or None
+    "data_version": "v2.39.0",
 }
 ```
 
