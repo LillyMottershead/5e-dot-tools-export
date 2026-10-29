@@ -15,6 +15,7 @@ import re
 import pytest
 
 from fivet import config, sync
+from fivet.config import Edition
 from fivet.render.markdown import render_spell
 from fivet.render.tags import LinkStyle
 from fivet.store import Store
@@ -94,3 +95,36 @@ def test_source_ambiguity_resolves_deterministically(real_store):
 
 def test_the_index_records_its_data_version(real_store):
     assert real_store.meta().get("version", "").startswith("v")
+
+
+@pytest.mark.parametrize("edition", list(Edition))
+def test_an_edition_scope_excludes_only_the_other_handbook(real_store, edition):
+    scoped = real_store.search(edition=edition, limit=100_000)
+    sources = {spell.source.upper() for spell in scoped}
+    assert edition.excluded_source not in sources
+    assert edition.phb in sources
+    assert len(sources) > 2, "supplements must survive an edition scope"
+
+
+@pytest.mark.parametrize("edition", list(Edition))
+def test_every_scoped_name_still_resolves_inside_its_edition(real_store, edition):
+    """A name the scope keeps must resolve, and never to the excluded book."""
+    wrong = [
+        name
+        for name in real_store.names(edition=edition)
+        if (match := real_store.resolve(name, edition=edition)) is None
+        or match.spell.source.upper() == edition.excluded_source
+    ]
+    assert wrong == []
+
+
+def test_a_scope_only_loses_names_unique_to_the_excluded_handbook(real_store):
+    """Nothing available elsewhere may disappear when an edition is picked."""
+    for edition in Edition:
+        lost = set(real_store.names()) - set(real_store.names(edition=edition))
+        elsewhere = {
+            spell.name
+            for spell in real_store.search(limit=100_000)
+            if spell.source.upper() != edition.excluded_source
+        }
+        assert not (lost & elsewhere)

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import tomllib
+from enum import StrEnum
 from pathlib import Path
 
 import platformdirs
@@ -45,6 +46,30 @@ DEFAULT_SOURCE_PRIORITY = [
     "GGR",
     "AitFR-AVT",
 ]
+
+
+class Edition(StrEnum):
+    """A rules edition, as selected by `--2014` or `--2024`.
+
+    The two Player's Handbooks are the only pair of books that cover the same
+    ground in both editions; every other source belongs to one edition or is
+    edition-neutral. So scoping to an edition means excluding the other
+    edition's PHB, not restricting to a single source: `--2014` keeps PHB and
+    every supplement, `--2024` keeps XPHB and every supplement.
+    """
+
+    LEGACY = "2014"
+    REVISED = "2024"
+
+    @property
+    def phb(self) -> str:
+        """The Player's Handbook belonging to this edition."""
+        return "PHB" if self is Edition.LEGACY else "XPHB"
+
+    @property
+    def excluded_source(self) -> str:
+        """The Player's Handbook this edition rules out."""
+        return "XPHB" if self is Edition.LEGACY else "PHB"
 
 
 class Settings(BaseModel):

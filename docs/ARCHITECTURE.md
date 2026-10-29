@@ -24,7 +24,7 @@ Where things live and what depends on what. For the reasoning behind these choic
 src/fivet/
 ├── __init__.py                    version only
 ├── cli.py                         click commands; parsing and output routing, no logic
-├── config.py                      Settings model, TOML load, XDG paths, source ranking
+├── config.py                      Settings model, TOML load, XDG paths, source ranking, editions
 ├── models.py                      Spell: lax pydantic model plus derived display properties
 ├── normalize.py                   closed enumerations: school, level, time, range, components, duration
 ├── store.py                       SQLite + FTS5 index, name resolution, filtered search
@@ -93,8 +93,8 @@ tests/
 ├── test_tags.py                   per tag group, nesting, unknown-tag fallback
 ├── test_entries.py                each entry type, table escaping
 ├── test_models.py                 parsing, laxness, derived properties
-├── test_config.py                 loading, validation, source ranking
-├── test_store.py                  build, resolution, ambiguity, search, FTS safety
+├── test_config.py                 loading, validation, source ranking, edition mapping
+├── test_store.py                  build, resolution, ambiguity, edition scope, search, FTS safety
 ├── test_sync.py                   fetch and cache, all HTTP mocked with respx
 ├── test_markdown.py               context, YAML quoting, templates
 ├── test_terminal.py               rich output content

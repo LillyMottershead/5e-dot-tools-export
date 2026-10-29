@@ -4,7 +4,7 @@ import sqlite3
 
 import pytest
 
-from fivet.config import Settings
+from fivet.config import Edition, Settings
 from fivet.store import MatchKind, Store, StoreMissingError, load_spells
 
 
@@ -119,6 +119,67 @@ class TestAmbiguity:
 
     def test_unambiguous_spell_has_no_alternatives(self, store):
         assert not store.resolve("Quiet Ward").is_ambiguous
+
+
+class TestEditionScope:
+    """`--2014` and `--2024`, which exclude the other edition's handbook.
+
+    The fixture corpus has Test Blast in both handbooks, Test Touch in PHB
+    only, Testing Winds in XPHB only, and two supplement spells.
+    """
+
+    def test_legacy_resolves_to_the_2014_handbook(self, store):
+        match = store.resolve("Test Blast", edition=Edition.LEGACY)
+        assert match.spell.source == "PHB"
+
+    def test_revised_resolves_to_the_2024_handbook(self, store):
+        match = store.resolve("Test Blast", edition=Edition.REVISED)
+        assert match.spell.source == "XPHB"
+
+    def test_the_excluded_handbook_is_not_offered_as_an_alternative(self, store):
+        """A scoped lookup is unambiguous, so the CLI prints no source note."""
+        assert not store.resolve("Test Blast", edition=Edition.LEGACY).is_ambiguous
+
+    def test_legacy_overrides_a_priority_that_prefers_2024(self, store):
+        settings = Settings(source_priority=["XPHB", "PHB"])
+        assert store.resolve("Test Blast", settings, edition=Edition.LEGACY).spell.source == "PHB"
+
+    def test_a_spell_only_in_the_excluded_handbook_does_not_resolve(self, store):
+        assert store.resolve("Testing Winds", edition=Edition.LEGACY) is None
+        assert store.resolve("Test Touch", edition=Edition.REVISED) is None
+
+    def test_supplements_survive_both_editions(self, store):
+        for edition in Edition:
+            assert store.resolve("Quiet Ward", edition=edition).spell.source == "XGE"
+
+    def test_a_fuzzy_fallback_cannot_reach_the_excluded_handbook(self, store):
+        """The scope applies to the candidate pool, not just the final pick."""
+        assert store.resolve("Testing Wnds").spell.name == "Testing Winds"
+        assert store.resolve("Testing Wnds", edition=Edition.LEGACY) is None
+
+    def test_a_prefix_fallback_stays_inside_the_edition(self, store):
+        assert store.resolve("Testing", edition=Edition.REVISED).spell.name == "Testing Winds"
+        assert store.resolve("Testing", edition=Edition.LEGACY) is None
+
+    def test_names_are_scoped(self, store):
+        assert "Testing Winds" in store.names()
+        assert "Testing Winds" not in store.names(edition=Edition.LEGACY)
+        assert "Test Touch" not in store.names(edition=Edition.REVISED)
+
+    def test_search_drops_the_excluded_handbook(self, store):
+        legacy = store.search(edition=Edition.LEGACY)
+        assert {s.source for s in legacy} == {"PHB", "XGE", "TCE"}
+        revised = store.search(edition=Edition.REVISED)
+        assert {s.source for s in revised} == {"XPHB", "XGE", "TCE"}
+
+    def test_search_combines_an_edition_with_other_filters(self, store):
+        results = store.search(query="Blast", level=3, edition=Edition.LEGACY)
+        assert [(s.name, s.source) for s in results] == [("Test Blast", "PHB")]
+
+    def test_an_edition_and_a_source_it_excludes_match_nothing(self, store):
+        """The CLI rejects this combination; the store simply finds nothing."""
+        assert store.search(source="XPHB", edition=Edition.LEGACY) == []
+        assert store.resolve("Test Blast", source="XPHB", edition=Edition.LEGACY) is None
 
 
 class TestSearch:

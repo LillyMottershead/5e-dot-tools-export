@@ -164,6 +164,63 @@ class TestSpellCommand:
         assert f"data_version: {VERSION}" in result.output
 
 
+class TestEditionFlags:
+    """`--2014` and `--2024` on the commands that filter."""
+
+    def test_legacy_picks_the_2014_handbook(self, runner, synced):
+        result = runner.invoke(main, ["spell", "Test Blast", "--2014"])
+        assert result.exit_code == 0
+        assert "source: PHB" in result.stdout
+
+    def test_revised_picks_the_2024_handbook(self, runner, synced):
+        result = runner.invoke(main, ["spell", "Test Blast", "--2024"])
+        assert result.exit_code == 0
+        assert "source: XPHB" in result.stdout
+
+    def test_a_scoped_lookup_is_unambiguous(self, runner, synced):
+        """With one handbook ruled out there is nothing to disambiguate."""
+        result = runner.invoke(main, ["spell", "Test Blast", "--2014"])
+        assert "also in" not in result.stderr
+
+    def test_a_spell_from_the_excluded_handbook_is_an_error_naming_the_edition(
+        self, runner, synced
+    ):
+        result = runner.invoke(main, ["spell", "Testing Winds", "--2014"])
+        assert result.exit_code != 0
+        assert "2014" in result.output
+
+    def test_supplements_are_unaffected(self, runner, synced):
+        for flag in ("--2014", "--2024"):
+            result = runner.invoke(main, ["spell", "Quiet Ward", flag])
+            assert result.exit_code == 0
+            assert "source: XGE" in result.stdout
+
+    def test_the_flags_are_mutually_exclusive(self, runner, synced):
+        result = runner.invoke(main, ["spell", "Test Blast", "--2014", "--2024"])
+        assert result.exit_code == 2
+        assert "mutually exclusive" in result.output
+
+    def test_a_source_the_edition_excludes_is_rejected(self, runner, synced):
+        """Better than reporting no match, which hides the contradiction."""
+        result = runner.invoke(main, ["spell", "Test Blast", "--2014", "--source", "XPHB"])
+        assert result.exit_code == 2
+        assert "other edition" in result.output
+
+    def test_search_drops_the_excluded_handbook(self, runner, synced):
+        result = runner.invoke(main, ["search", "Test", "--2014"])
+        assert result.exit_code == 0
+        assert "\tPHB" in result.output
+        assert "\tXPHB" not in result.output
+
+    def test_search_rejects_the_flags_together(self, runner, synced):
+        result = runner.invoke(main, ["search", "--2014", "--2024"])
+        assert result.exit_code == 2
+
+    def test_search_rejects_a_source_the_edition_excludes(self, runner, synced):
+        result = runner.invoke(main, ["search", "--2024", "--source", "PHB"])
+        assert result.exit_code == 2
+
+
 class TestSpellOutputFile:
     def test_writes_a_named_file(self, runner, synced, tmp_path):
         target = tmp_path / "vault"

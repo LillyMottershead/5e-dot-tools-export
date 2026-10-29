@@ -23,9 +23,10 @@ uv run 5et spell fireball  # pretty terminal output
 
 ```
 5et sync [--version TAG] [--force]
-5et spell NAME [--source SRC] [--format {auto,rich,md}] [--template NAME]
-               [--links {wikilink,plain,url}] [--output DIR] [--force]
-5et search [QUERY] [--level N] [--school NAME] [--class NAME] [--source SRC] [--limit N]
+5et spell NAME [--source SRC] [--2014 | --2024] [--format {auto,rich,md}]
+               [--template NAME] [--links {wikilink,plain,url}] [--output DIR] [--force]
+5et search [QUERY] [--level N] [--school NAME] [--class NAME] [--source SRC]
+               [--2014 | --2024] [--limit N]
 5et sources
 5et cache {info,clear}
 ```
@@ -42,6 +43,19 @@ Names resolve by exact match, then prefix, then fuzzy, so typos work. When a gue
 ```
 
 A spell that exists in both the 2014 and 2024 books is ambiguous. The 2024 source wins by default, and the choice is reported on stderr. Set `source_priority` in the config to change that, or pass `--source`.
+
+### Playing one edition
+
+`--2014` and `--2024` scope a lookup or a search to one rules edition, which is usually what you want when a table is playing one of them.
+
+```sh
+5et spell fireball --2014         # the Player's Handbook version
+5et search --class Wizard --2024  # the 2024 wizard list
+```
+
+The two Player's Handbooks are the only books that cover the same ground twice, so an edition excludes the other edition's handbook rather than restricting you to a single book: `--2014` keeps PHB and every supplement, `--2024` keeps XPHB and every supplement. Spells from Xanathar's, Tasha's and the rest stay available either way.
+
+A spell printed only in the excluded handbook is reported as no match, naming the edition. The flags cannot be combined with each other, or with a `--source` the edition rules out.
 
 ### Exporting markdown
 

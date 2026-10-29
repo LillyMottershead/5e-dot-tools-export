@@ -15,12 +15,15 @@ from __future__ import annotations
 import re
 import shutil
 import sys
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import click
 from rich.console import Console
 
 from fivet import __version__, config, sync
+from fivet.config import Edition
 from fivet.models import Spell
 from fivet.render import terminal
 from fivet.render.markdown import DEFAULT_TEMPLATE, TemplateMissingError, render_spell
@@ -59,6 +62,45 @@ def _open_store(ctx: click.Context) -> Store:
         raise click.ClickException(SYNC_HINT) from None
     ctx.call_on_close(store.close)
     return store
+
+
+def _edition_options(command: Callable[..., Any]) -> Callable[..., Any]:
+    """Add the `--2014` / `--2024` pair, shared by the commands that filter."""
+    for flag, name, kept in (
+        ("--2024", "revised", Edition.REVISED),
+        ("--2014", "legacy", Edition.LEGACY),
+    ):
+        command = click.option(
+            flag,
+            name,
+            is_flag=True,
+            help=f"Only {kept.value} rules: {kept.phb} and the supplements, "
+            f"never {kept.excluded_source}.",
+        )(command)
+    return command
+
+
+def _edition(legacy: bool, revised: bool) -> Edition | None:
+    if legacy and revised:
+        raise click.UsageError("--2014 and --2024 are mutually exclusive.")
+    if legacy:
+        return Edition.LEGACY
+    if revised:
+        return Edition.REVISED
+    return None
+
+
+def _check_source_against_edition(source: str | None, edition: Edition | None) -> None:
+    """Reject a `--source` the edition rules out, rather than finding nothing.
+
+    Without this, `--2014 --source XPHB` would report no matching spell, which
+    is true but hides the contradiction that caused it.
+    """
+    if source and edition and source.upper() == edition.excluded_source:
+        raise click.UsageError(
+            f"--source {source} is not available under --{edition.value}; "
+            f"{edition.excluded_source} belongs to the other edition."
+        )
 
 
 def _data_version(store: Store) -> str:
@@ -132,11 +174,14 @@ def sync_command(version: str | None, force: bool) -> None:
     help="Write <Name>.md into this directory instead of stdout.",
 )
 @click.option("--force", is_flag=True, help="Overwrite an existing output file.")
+@_edition_options
 @click.pass_context
 def spell_command(
     ctx: click.Context,
     name: str,
     source: str | None,
+    legacy: bool,
+    revised: bool,
     output_format: str,
     template: str | None,
     links: str | None,
@@ -144,15 +189,24 @@ def spell_command(
     force: bool,
 ) -> None:
     """Look up a spell by NAME."""
+    edition = _edition(legacy, revised)
+    _check_source_against_edition(source, edition)
     settings = config.load_settings()
     store = _open_store(ctx)
 
-    match = store.resolve(name, settings, source=source)
+    match = store.resolve(name, settings, source=source, edition=edition)
     if match is None:
         message = f"No spell matching {name!r}"
         if source:
             message += f" in source {source!r}"
-        suggestions = store.fuzzy_names(name, cutoff=max(50, settings.fuzzy_cutoff - 20), limit=3)
+        if edition:
+            message += f" under the {edition.value} rules"
+        suggestions = store.fuzzy_names(
+            name,
+            cutoff=max(50, settings.fuzzy_cutoff - 20),
+            limit=3,
+            edition=edition,
+        )
         if suggestions:
             message += ". Did you mean: " + ", ".join(n for n, _ in suggestions)
         raise click.ClickException(message + ".")
@@ -214,6 +268,7 @@ def _render_markdown(
 @click.option("--class", "class_name", default=None, help="Class that can cast it.")
 @click.option("--source", "-s", default=None, help="Source abbreviation.")
 @click.option("--limit", type=int, default=50, show_default=True, help="Maximum results.")
+@_edition_options
 @click.pass_context
 def search_command(
     ctx: click.Context,
@@ -222,9 +277,13 @@ def search_command(
     school: str | None,
     class_name: str | None,
     source: str | None,
+    legacy: bool,
+    revised: bool,
     limit: int,
 ) -> None:
     """Search spells by name fragment and filters."""
+    edition = _edition(legacy, revised)
+    _check_source_against_edition(source, edition)
     store = _open_store(ctx)
     results = store.search(
         query=query,
@@ -232,6 +291,7 @@ def search_command(
         school=school,
         class_name=class_name,
         source=source,
+        edition=edition,
         limit=limit,
     )
     if not results:

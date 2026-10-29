@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from fivet import config
-from fivet.config import Settings
+from fivet.config import Edition, Settings
 from fivet.render.tags import LinkStyle
 
 
@@ -102,3 +102,25 @@ class TestSourceRank:
     def test_a_custom_priority_inverts_the_choice(self):
         settings = Settings(source_priority=["PHB", "XPHB"])
         assert settings.source_rank("PHB") < settings.source_rank("XPHB")
+
+
+class TestEdition:
+    def test_each_edition_names_its_own_handbook(self):
+        assert Edition.LEGACY.phb == "PHB"
+        assert Edition.REVISED.phb == "XPHB"
+
+    def test_each_edition_excludes_the_other_handbook(self):
+        """An edition rules out one book, rather than restricting to one."""
+        assert Edition.LEGACY.excluded_source == "XPHB"
+        assert Edition.REVISED.excluded_source == "PHB"
+
+    def test_the_values_are_the_flag_names(self):
+        assert Edition("2014") is Edition.LEGACY
+        assert Edition("2024") is Edition.REVISED
+
+    def test_no_supplement_is_excluded_by_either_edition(self):
+        """Only the two handbooks are edition-specific; see config.Edition."""
+        excluded = {edition.excluded_source for edition in Edition}
+        supplements = [s for s in config.DEFAULT_SOURCE_PRIORITY if s not in {"PHB", "XPHB"}]
+        assert excluded == {"PHB", "XPHB"}
+        assert not excluded.intersection(supplements)

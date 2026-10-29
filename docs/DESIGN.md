@@ -174,6 +174,16 @@ Resolution is a configured priority list, default `["XPHB", "PHB", "XGE", "TCE",
 
 Rejected: interactive prompting, because it breaks piping to a file, which is the primary export path. Rejected: rendering all matches, because the common case is one spell and the noise is not worth it.
 
+### 5.3 Edition scope
+
+`--2014` and `--2024` scope a lookup or a search to one rules edition, for the common case of a table that plays one of them and does not want the other's wording.
+
+An edition is expressed as an exclusion, not a restriction. Of the 18 sources carrying spells, PHB and XPHB are the only pair covering the same ground in both editions; the other 16 are supplements that belong to one edition or are edition-neutral, and a table on either edition still casts the spells printed in Xanathar's or Tasha's. So `--2014` means every source except XPHB and `--2024` means every source except PHB. Restricting to the handbook alone would hide 222 of the 583 distinct spell names under `--2014` and 192 under `--2024`, for no gain.
+
+The scope applies to the whole candidate pool rather than to the final pick: exact, prefix and fuzzy matching all run against the scoped name set. Filtering only at the end would let a fuzzy search land on a name printed solely in the excluded handbook and then resolve to nothing, reporting a typo where the real answer is that the spell is not in that edition. Measured against the real corpus, a scope costs 13 names under `--2014` and 2 under `--2024`, and no name available in a supplement is ever lost.
+
+Interaction with the priority list in 5.2 needs no special case: with XPHB excluded, the default `["XPHB", "PHB", ...]` ranking picks PHB by itself. `--source` naming the excluded handbook is a contradiction, so the CLI rejects it rather than reporting an empty result that hides the cause.
+
 ## 6. The markup layer
 
 This is the part with real risk, so it gets a measured scope. Across the 935 surveyed spells there are exactly 26 distinct `{@tag}` types and 6 entry types. Counts below are occurrences, and they justify where the care goes.
@@ -224,9 +234,9 @@ output_dir = "~/vault/Spells"
 
 ```
 5et sync [--version TAG] [--force]
-5et spell NAME [--source SRC] [--format {auto,rich,md}] [--template NAME]
-              [--links {wikilink,plain,url}] [--output DIR] [--force]
-5et search QUERY [--level N] [--school NAME] [--class NAME] [--source SRC]
+5et spell NAME [--source SRC] [--2014 | --2024] [--format {auto,rich,md}]
+              [--template NAME] [--links {wikilink,plain,url}] [--output DIR] [--force]
+5et search QUERY [--level N] [--school NAME] [--class NAME] [--source SRC] [--2014 | --2024]
 5et sources
 5et cache {info,clear}
 ```
@@ -235,6 +245,7 @@ Behaviors:
 
 - `--format` defaults to `auto`: rich only when stdout is a TTY, so `5et spell fireball > f.md` yields clean markdown with no flag. `--output` also implies markdown
 - advisory notes (a fuzzy match, a source ambiguity) go to stderr, so redirected markdown stays clean
+- `--2014` and `--2024` scope to one rules edition per section 5.3; they are mutually exclusive, and `sources` deliberately does not take them, since a cache inventory should report what was actually fetched
 - `--output DIR` writes `Fireball.md` and refuses to overwrite without `--force`
 - `--version` on sync pins; without it, sync pins whatever is newest at that moment and never drifts afterward
 - command is `5et`, with `fivetools` as a second console script for anyone who dislikes a leading digit
@@ -341,6 +352,8 @@ Recorded so the reasoning is not lost. Each was driven by reading upstream or by
 `@scaledamage` renders the step, not the base. The original plan emitted the base, which would have overstated scaling eightfold in the one sentence it appears in. Corrected in section 6.1 after reading upstream's `_TagDiceFlavorScaling`.
 
 Formatting fixed to the `classic` style hint. Upstream formats differently per edition; v1 picks one so exports read consistently. Noted in section 3.2 and listed above as still open.
+
+Edition flags exclude a book rather than selecting one. The feature was first written down as "`--2014` and `--2024` filter to PHB or XPHB", which would have dropped every supplement from a scoped result and hidden roughly a third of the corpus. Implemented as the exclusion described in section 5.3 instead, since only the two handbooks are edition-specific.
 
 `url` link mode is conditional. A link is produced only when the tag maps to a 5e.tools page and carries an explicit source, because the hash is `name_source` and a guessed source yields a link that silently 404s.
 

@@ -23,7 +23,7 @@ from typing import Any
 
 from rapidfuzz import fuzz, process
 
-from fivet.config import Settings
+from fivet.config import Edition, Settings
 from fivet.models import Spell
 from fivet.normalize import SCHOOLS
 
@@ -92,6 +92,17 @@ def _fts_query(text: str) -> str:
     if not tokens:
         return ""
     return " AND ".join(f'"{token}"*' for token in tokens)
+
+
+def _edition_filter(edition: Edition | None, column: str = "source") -> tuple[str, list[Any]]:
+    """SQL fragment and params scoping a query to one rules edition.
+
+    An edition excludes the other edition's Player's Handbook rather than
+    selecting a single source; see `config.Edition`.
+    """
+    if edition is None:
+        return "", []
+    return f" AND {column} <> ? COLLATE NOCASE", [edition.excluded_source]
 
 
 def _normalize_school(value: str) -> str | None:
@@ -211,35 +222,53 @@ class Store:
         ).fetchall()
         return [(row["source"], row["n"]) for row in rows]
 
-    def names(self, kind: str = KIND_SPELL) -> list[str]:
+    def names(self, kind: str = KIND_SPELL, edition: Edition | None = None) -> list[str]:
+        clause, extra = _edition_filter(edition)
         rows = self.connection.execute(
-            "SELECT DISTINCT name FROM entity WHERE kind = ? ORDER BY name", (kind,)
+            f"SELECT DISTINCT name FROM entity WHERE kind = ?{clause} ORDER BY name",
+            (kind, *extra),
         ).fetchall()
         return [row["name"] for row in rows]
 
-    def by_name(self, name: str, kind: str = KIND_SPELL) -> list[Spell]:
+    def by_name(
+        self, name: str, kind: str = KIND_SPELL, edition: Edition | None = None
+    ) -> list[Spell]:
         """Every spell with this exact name, case-insensitively, across sources."""
+        clause, extra = _edition_filter(edition)
         rows = self.connection.execute(
-            "SELECT json FROM entity WHERE kind = ? AND name = ? COLLATE NOCASE",
-            (kind, name),
+            f"SELECT json FROM entity WHERE kind = ? AND name = ? COLLATE NOCASE{clause}",
+            (kind, name, *extra),
         ).fetchall()
         return [self._to_spell(row) for row in rows]
 
-    def prefix_search(self, query: str, kind: str = KIND_SPELL, limit: int = 50) -> list[Spell]:
+    def prefix_search(
+        self,
+        query: str,
+        kind: str = KIND_SPELL,
+        limit: int = 50,
+        edition: Edition | None = None,
+    ) -> list[Spell]:
         fts = _fts_query(query)
         if not fts:
             return []
+        clause, extra = _edition_filter(edition, "e.source")
         rows = self.connection.execute(
             "SELECT e.json FROM entity_fts f JOIN entity e ON e.id = f.rowid "
-            "WHERE entity_fts MATCH ? AND e.kind = ? ORDER BY e.name LIMIT ?",
-            (fts, kind, limit),
+            f"WHERE entity_fts MATCH ? AND e.kind = ?{clause} ORDER BY e.name LIMIT ?",
+            (fts, kind, *extra, limit),
         ).fetchall()
         return [self._to_spell(row) for row in rows]
 
-    def fuzzy_names(self, query: str, cutoff: int = 80, limit: int = 5) -> list[tuple[str, float]]:
+    def fuzzy_names(
+        self,
+        query: str,
+        cutoff: int = 80,
+        limit: int = 5,
+        edition: Edition | None = None,
+    ) -> list[tuple[str, float]]:
         matches = process.extract(
             query,
-            self.names(),
+            self.names(edition=edition),
             scorer=fuzz.WRatio,
             score_cutoff=cutoff,
             limit=limit,
@@ -253,28 +282,33 @@ class Store:
         name: str,
         settings: Settings | None = None,
         source: str | None = None,
+        edition: Edition | None = None,
     ) -> Match | None:
         """Resolve a name to one spell, preferring exact over prefix over fuzzy.
 
         Source ambiguity is settled by the configured priority, never by a
         prompt, so output stays pipeable.
+
+        An edition scopes every step, not just the final pick, so a prefix or
+        fuzzy fallback cannot land on a name that exists only in the excluded
+        book and then resolve to nothing.
         """
         settings = settings or Settings()
 
-        candidates = self.by_name(name)
+        candidates = self.by_name(name, edition=edition)
         kind = MatchKind.EXACT
 
         if not candidates:
-            prefixed = self.prefix_search(name, limit=10)
+            prefixed = self.prefix_search(name, limit=10, edition=edition)
             if prefixed:
                 best = min(prefixed, key=lambda s: (len(s.name), s.name.lower()))
-                candidates = self.by_name(best.name)
+                candidates = self.by_name(best.name, edition=edition)
                 kind = MatchKind.PREFIX
 
         if not candidates:
-            fuzzy = self.fuzzy_names(name, cutoff=settings.fuzzy_cutoff, limit=1)
+            fuzzy = self.fuzzy_names(name, cutoff=settings.fuzzy_cutoff, limit=1, edition=edition)
             if fuzzy:
-                candidates = self.by_name(fuzzy[0][0])
+                candidates = self.by_name(fuzzy[0][0], edition=edition)
                 kind = MatchKind.FUZZY
 
         if not candidates:
@@ -299,6 +333,7 @@ class Store:
         school: str | None = None,
         class_name: str | None = None,
         source: str | None = None,
+        edition: Edition | None = None,
         kind: str = KIND_SPELL,
         limit: int = 200,
     ) -> list[Spell]:
@@ -334,6 +369,10 @@ class Store:
         if source:
             where.append("e.source = ? COLLATE NOCASE")
             params.append(source)
+
+        if edition is not None:
+            where.append("e.source <> ? COLLATE NOCASE")
+            params.append(edition.excluded_source)
 
         sql.append("WHERE " + " AND ".join(where))
         sql.append("ORDER BY e.name, e.source LIMIT ?")
