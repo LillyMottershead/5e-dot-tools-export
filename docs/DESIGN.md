@@ -233,22 +233,41 @@ output_dir = "~/vault/Spells"
 ## 8. CLI surface
 
 ```
-5et sync [--version TAG] [--force]
-5et spell NAME [--source SRC] [--2014 | --2024] [--format {auto,rich,md}]
+5et sync [--version TAG] [--force] [--format {auto,text,json}]
+5et spell NAME [--source SRC] [--2014 | --2024] [--format {auto,rich,md,json}]
               [--template NAME] [--links {wikilink,plain,url}] [--output DIR] [--force]
 5et search QUERY [--level N] [--school NAME] [--class NAME] [--source SRC] [--2014 | --2024]
-5et sources
-5et cache {info,clear}
+              [--limit N] [--format {auto,rich,text,json}]
+5et sources [--format {auto,rich,text,json}]
+5et cache info [--format {auto,text,json}]
+5et cache clear [--yes] [--format {auto,text,json}]
 ```
 
 Behaviors:
 
-- `--format` defaults to `auto`: rich only when stdout is a TTY, so `5et spell fireball > f.md` yields clean markdown with no flag. `--output` also implies markdown
+- `--format` defaults to `auto`: rich only when stdout is a TTY, so `5et spell fireball > f.md` yields clean markdown with no flag. `--output` also implies markdown. Every command takes it, with the same four names meaning the same four things throughout: `auto`, `rich`, the command's plain text shape (`md` for one spell, tab-separated lines for a listing or a report) and `json`
+- `rich` is not offered by `sync` or `cache`, which report rather than present; there is no panel or table for them to produce
 - advisory notes (a fuzzy match, a source ambiguity) go to stderr, so redirected markdown stays clean
 - `--2014` and `--2024` scope to one rules edition per section 5.3; they are mutually exclusive, and `sources` deliberately does not take them, since a cache inventory should report what was actually fetched
 - `--output DIR` writes `Fireball.md` and refuses to overwrite without `--force`
 - `--version` on sync pins; without it, sync pins whatever is newest at that moment and never drifts afterward
 - command is `5et`, with `fivetools` as a second console script for anyone who dislikes a leading digit
+
+### 8.1 JSON output
+
+`--format json` emits the normalized display view, never the raw upstream record. The shapes are built in `render/payloads.py` and are the same values the templates and the terminal panel consume: `level_text` rather than a bare `level`, `school` spelled out, `concentration` and `ritual` as booleans lifted out of `duration` and `meta`, and markup stripped from every scalar.
+
+This is a deliberate cost. Passing the record through would be one line and would give a consumer more fields, but it would also make every upstream schema change a breaking change for anyone parsing our output, and it would hand them `{@damage 8d6}` to deal with. Anyone who wants the raw record can read `raw/spells-<src>.json` out of the cache, which is exactly what it is for.
+
+Rules that hold for every command:
+
+- the payload is a JSON object, never a bare array, so a later version can add a key without breaking a consumer
+- every documented key is always present; `null` means not applicable, not omitted. `cache info` on an empty cache reports `"cached": false` with the rest nulled rather than a short object
+- an empty result is a result: `search` with no matches prints `{"count": 0, "results": [], ...}` and exits 0
+- notes, prompts and progress stay on stderr, so stdout is parseable on its own. This is why `cache clear` asks for confirmation on stderr
+- `data_version` travels with any payload read out of the index, so an export can cite the upstream release it came from
+
+Two fields are prose rather than structure: `description` and `higher_levels` carry rendered markdown, because the upstream entries tree is nested prose with tables and inline rolls, and there is no faithful JSON for it short of republishing the tree. They honor `--links` and the configured link style like any other prose, so `--format json --links plain` gives text with no wikilink syntax in it.
 
 ## 9. Dependencies
 
@@ -364,3 +383,7 @@ Frontmatter values are plain text while body prose carries the link style, and b
 The template context carries `higher_levels_inline` alongside `higher_levels_md`, the same content with its heading folded into a bold lead-in, for templates such as `compact` where an h2 would be out of place.
 
 Snapshot tests use hand-written fixtures that mirror the structure of named real spells, rather than the real spells themselves, to respect the licensing constraint in section 2. Invariant checks against real data live in an opt-in test module that skips unless a cache exists.
+
+`--format` is one flag with per-command choices, rather than a `--json` switch per command. The alternative reads shorter at the call site but makes `auto` unexpressible, and the TTY fallback is the behavior that most wants naming: `--format md` and `--format text` exist so a plain shape can be forced while attached to a terminal, which was previously impossible for `search` and `sources`.
+
+`--format rich --output DIR` is a usage error. It used to print a panel and silently ignore `--output`, writing nothing; a file is never a terminal, so the combination has no meaning worth guessing at.

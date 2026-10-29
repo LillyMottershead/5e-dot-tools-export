@@ -319,3 +319,144 @@ class TestCacheCommands:
         result = runner.invoke(main, ["cache", "clear", "--yes"])
         assert result.exit_code == 0
         assert "already empty" in result.output
+
+
+class TestJsonFormat:
+    """`--format json` on every command, per docs/DESIGN.md section 8.1."""
+
+    def test_spell_emits_the_display_view_not_the_raw_record(self, runner, synced):
+        result = runner.invoke(main, ["spell", "Test Blast", "--format", "json"])
+        assert result.exit_code == 0
+        payload = json.loads(result.stdout)
+        assert payload["name"] == "Test Blast"
+        assert payload["subtitle"] == "3rd-level evocation"
+        assert payload["data_version"] == VERSION
+        assert "entriesHigherLevel" not in payload
+
+    def test_spell_notes_still_go_to_stderr(self, runner, synced):
+        """A note on stdout would make the JSON unparseable."""
+        result = runner.invoke(main, ["spell", "Quiet Wrad", "--format", "json"])
+        assert result.exit_code == 0
+        assert json.loads(result.stdout)["name"] == "Quiet Ward"
+        assert "Matched" in result.stderr
+
+    def test_spell_honors_the_link_style(self, runner, synced):
+        result = runner.invoke(
+            main, ["spell", "Test Blast", "--format", "json", "--links", "plain"]
+        )
+        assert "[[" not in json.loads(result.stdout)["description"]
+
+    def test_spell_writes_a_json_file_with_output(self, runner, synced, tmp_path):
+        result = runner.invoke(
+            main, ["spell", "Quiet Ward", "--format", "json", "-o", str(tmp_path)]
+        )
+        assert result.exit_code == 0
+        written = tmp_path / "Quiet Ward.json"
+        assert json.loads(written.read_text())["name"] == "Quiet Ward"
+
+    def test_rich_cannot_be_written_to_a_file(self, runner, synced, tmp_path):
+        result = runner.invoke(
+            main, ["spell", "Quiet Ward", "--format", "rich", "-o", str(tmp_path)]
+        )
+        assert result.exit_code == 2
+        assert "--output" in result.output
+
+    def test_search_emits_results_and_a_count(self, runner, synced):
+        result = runner.invoke(main, ["search", "Ward", "--format", "json"])
+        assert result.exit_code == 0
+        payload = json.loads(result.stdout)
+        assert payload["count"] == 2
+        assert {row["name"] for row in payload["results"]} == {"Quiet Ward", "Loud Ward"}
+
+    def test_search_with_no_matches_is_parseable_and_not_an_error(self, runner, synced):
+        result = runner.invoke(main, ["search", "Zzzznothing", "--format", "json"])
+        assert result.exit_code == 0
+        assert json.loads(result.stdout) == {"count": 0, "results": [], "data_version": VERSION}
+
+    def test_search_filters_apply(self, runner, synced):
+        result = runner.invoke(main, ["search", "--class", "Druid", "--format", "json"])
+        payload = json.loads(result.stdout)
+        assert [row["name"] for row in payload["results"]] == ["Testing Winds"]
+
+    def test_sources_emits_counts(self, runner, synced):
+        result = runner.invoke(main, ["sources", "--format", "json"])
+        assert result.exit_code == 0
+        payload = json.loads(result.stdout)
+        assert {"source": "XPHB", "spells": 2} in payload["sources"]
+
+    def test_cache_info_emits_the_cache_state(self, runner, synced):
+        result = runner.invoke(main, ["cache", "info", "--format", "json"])
+        assert result.exit_code == 0
+        payload = json.loads(result.stdout)
+        assert payload["cached"] is True
+        assert payload["version"] == VERSION
+        assert payload["spells"] == 6
+        assert payload["size_bytes"] > 0
+
+    def test_cache_info_on_an_empty_cache_keeps_every_key(self, runner, isolated_dirs):
+        result = runner.invoke(main, ["cache", "info", "--format", "json"])
+        assert result.exit_code == 0
+        payload = json.loads(result.stdout)
+        assert payload["cached"] is False
+        assert payload["version"] is None
+        assert payload["spells"] is None
+
+    def test_cache_clear_reports_what_it_removed(self, runner, synced):
+        result = runner.invoke(main, ["cache", "clear", "--yes", "--format", "json"])
+        assert result.exit_code == 0
+        assert json.loads(result.stdout) == {"cache": str(synced), "removed": True}
+
+    def test_cache_clear_on_an_empty_cache_reports_no_removal(self, runner, isolated_dirs):
+        import shutil
+
+        shutil.rmtree(isolated_dirs["cache"])
+        result = runner.invoke(main, ["cache", "clear", "--yes", "--format", "json"])
+        assert json.loads(result.stdout)["removed"] is False
+
+    def test_the_clear_prompt_stays_off_stdout(self, runner, synced):
+        """Stdout holds the result, so a prompt belongs on stderr."""
+        result = runner.invoke(main, ["cache", "clear", "--format", "json"], input="n\n")
+        assert result.exit_code != 0
+        assert "Delete" in result.stderr
+        assert "Delete" not in result.stdout
+
+    @respx.mock
+    def test_sync_reports_what_it_fetched(self, runner, isolated_dirs):
+        mock_all(respx)
+        result = runner.invoke(main, ["sync", "--format", "json"])
+        assert result.exit_code == 0
+        payload = json.loads(result.stdout)
+        assert payload == {
+            "cache": str(isolated_dirs["cache"]),
+            "version": VERSION,
+            "synced": True,
+            "spells": 2,
+            "sources": 2,
+        }
+
+    @respx.mock
+    def test_sync_reports_a_no_op(self, runner, isolated_dirs):
+        mock_all(respx)
+        runner.invoke(main, ["sync", "--version", VERSION])
+        result = runner.invoke(main, ["sync", "--version", VERSION, "--format", "json"])
+        payload = json.loads(result.stdout)
+        assert payload["synced"] is False
+        assert payload["version"] == VERSION
+
+
+class TestExplicitPlainFormat:
+    """`--format text` and `--format md` force the piped shape on a TTY too."""
+
+    def test_search_text(self, runner, synced):
+        result = runner.invoke(main, ["search", "Ward", "--format", "text"])
+        assert "Quiet Ward\t1\tAbjuration\tXGE" in result.output
+
+    def test_sources_text(self, runner, synced):
+        result = runner.invoke(main, ["sources", "--format", "text"])
+        assert "XPHB\t2" in result.output
+
+    def test_rich_is_offered_only_where_it_exists(self, runner):
+        """A report has no panel or table, so `rich` is not a choice there."""
+        assert "rich" in runner.invoke(main, ["search", "--help"]).output
+        assert "rich" not in runner.invoke(main, ["cache", "info", "--help"]).output
+        assert "rich" not in runner.invoke(main, ["sync", "--help"]).output

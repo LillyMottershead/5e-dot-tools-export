@@ -33,6 +33,7 @@ src/fivet/
 │   ├── tags.py                    {@tag} markup to markdown; depth-aware splitters; LinkStyle
 │   ├── entries.py                 recursive entries tree to markdown blocks
 │   ├── markdown.py                template context assembly, Jinja2 render, YAML quoting
+│   ├── payloads.py                normalized display views for --format json
 │   └── terminal.py                rich panel, search and source tables
 └── templates/
     ├── obsidian.md.j2             YAML frontmatter plus body, wikilinks
@@ -48,11 +49,11 @@ Imports flow one way, so the risky parts are testable in isolation:
 normalize ──→ models ──→ store ──→ sync
     │            │          ↑        │
     │            ↓          │        │
-tags ──→ entries ──→ markdown       │
-  │                     ↑            │
-  │                  config ─────────┘
-  └──→ terminal           │
-            └─────────────┴──→ cli
+tags ──→ entries ──→ markdown        │
+  │          │            ↑          │
+  │          ↓         config ───────┘
+  └──→ terminal, payloads   │
+            └───────────────┴──→ cli
 ```
 
 `tags.py` and `normalize.py` import nothing internal. `cli.py` is imported by nothing. The markup layer (`tags`, `entries`) needs no network, no cache and no CLI to test, which is the point of the split: it is the part most likely to regress.
@@ -97,8 +98,9 @@ tests/
 ├── test_store.py                  build, resolution, ambiguity, edition scope, search, FTS safety
 ├── test_sync.py                   fetch and cache, all HTTP mocked with respx
 ├── test_markdown.py               context, YAML quoting, templates
+├── test_payloads.py               JSON shapes, stripped markup, link style
 ├── test_terminal.py               rich output content
-├── test_cli.py                    every command, via click's CliRunner
+├── test_cli.py                    every command and --format, via click's CliRunner
 ├── test_snapshots.py              19 snapshots over hand-written fixtures
 ├── test_integration.py            invariants against real data; skips without a cache
 └── __snapshots__/

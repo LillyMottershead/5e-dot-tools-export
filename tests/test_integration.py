@@ -10,12 +10,14 @@ Run against a real cache with:
 or point at a specific one with FIVET_CACHE_DIR.
 """
 
+import json
 import re
 
 import pytest
 
 from fivet import config, sync
 from fivet.config import Edition
+from fivet.render import payloads
 from fivet.render.markdown import render_spell
 from fivet.render.tags import LinkStyle
 from fivet.store import Store
@@ -128,3 +130,28 @@ def test_a_scope_only_loses_names_unique_to_the_excluded_handbook(real_store):
             if spell.source.upper() != edition.excluded_source
         }
         assert not (lost & elsewhere)
+
+
+def test_every_spell_yields_a_serializable_json_payload(all_spells):
+    """`--format json` must survive the whole corpus, not just the fixtures."""
+    for spell in all_spells:
+        for links in LinkStyle:
+            payload = payloads.spell_payload(spell, links=links, data_version="vTEST")
+            json.dumps(payload)
+
+
+def test_json_payloads_carry_the_fields_a_consumer_can_rely_on(all_spells):
+    required = ("name", "source", "level", "subtitle", "casting_time", "range", "duration")
+    for spell in all_spells:
+        payload = payloads.spell_payload(spell)
+        missing = [key for key in required if not payload.get(key) and payload.get(key) != 0]
+        assert missing == [], f"{spell.uid}: empty {missing}"
+
+
+def test_no_markup_leaks_into_a_json_payload(all_spells):
+    offenders = [
+        spell.uid
+        for spell in all_spells
+        if "{@" in json.dumps(payloads.spell_payload(spell, links=LinkStyle.PLAIN))
+    ]
+    assert offenders == []
