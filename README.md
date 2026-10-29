@@ -2,7 +2,7 @@
 
 A CLI for looking up D&D 5e spells from [5etools](https://5e.tools) data and exporting them as markdown.
 
-See [docs/DESIGN.md](docs/DESIGN.md) for the design and the reasoning behind it.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the layout and [docs/DESIGN.md](docs/DESIGN.md) for the design and the reasoning behind it.
 
 ## Install
 

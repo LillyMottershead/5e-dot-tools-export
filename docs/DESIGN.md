@@ -101,21 +101,7 @@ Note the join key is the pair `(source, name)`, not name alone, because a 2014 a
 
 Four layers. The point of the split is that the markup converter, which is the part most likely to regress, is testable with no network, no cache, and no CLI.
 
-```
-5et/
-  cli.py            click entry points, argument parsing only
-  config.py         TOML load, pydantic-validated settings
-  sync.py           upstream version resolution, fetch, cache write
-  store.py          SQLite index, exact and fuzzy lookup
-  models.py         pydantic spell model
-  normalize.py      the section 3.2 tables: time, range, duration, school
-  render/
-    tags.py         one {@tag} handler per group, dispatch dict
-    entries.py      recursive entries tree to markdown
-    terminal.py     rich rendering
-    markdown.py     template context assembly and Jinja2 render
-  templates/        shipped .md.j2 defaults
-```
+The file layout and the dependency direction are in [ARCHITECTURE.md](ARCHITECTURE.md), which is the authoritative map. This section covers only the reasoning.
 
 ### 4.1 Cache and storage
 
